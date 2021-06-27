@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瀑布流</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .wrapper {
+            width: 980px;
+            margin: 0 auto;
+            border: 1px solid #000;
+            background-color: #eee;
+        }
+        .wrapper::after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+        .wrapper li {
+            float: left;
+            width: 25%;
+        }
+        .wrapper .col .item {
+            margin: 10px;
+            background-color: #fff;
+            padding: 10px;
+        }
+        .item img {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        1. 封装ajax函数
+        2. 实现瀑布流
+
+        懒加载：
+            用到的时候加载  不用的时候不加载
+        预加载：
+            提前加载好 
+     -->
+
+     <ul class="wrapper">
+         <!-- li.col*4>div.item>img[src="./image/$.jpg"]+p + tab/enter -->
+        <li class="col">
+            <!-- <div class="item">
+                <img src="./image/1.jpg" alt="">
+                <p>我是图片</p>
+            </div> -->
+        </li>
+        <li class="col">
+            <!-- <div class="item">
+                <img src="./image/2.jpg" alt="">
+                <p>我是图片</p>
+            </div> -->
+        </li>
+        <li class="col">
+            <!-- <div class="item">
+                <img src="./image/3.jpg" alt="">
+                <p>我是图片</p>
+            </div> -->
+        </li>
+        <li class="col">
+            <!-- <div class="item">
+                <img src="./image/4.jpg" alt="">
+                <p>我是图片</p>
+            </div> -->
+        </li>
+     </ul>
+     <script src="./ajax.js"></script>
+     <script>
+         function getData() {
+             ajax({
+                 url: './data.json',
+                 type: 'get',
+                 data: '',
+                 success: function (res) {
+                     renderDom(res);
+                 }
+             })
+         }
+
+         function renderDom(data) {
+            var oLi = document.getElementsByClassName('col');
+            var imgWidth = oLi[0].offsetWidth - 20 - 20;
+            data.forEach(function (item) {
+                var index = getMinLi().minIndex;
+            //     oLi[index].innerHTML += `<div class="item">
+            //     <img src="${item.img}" alt="">
+            //     <p>${item.desc}</p>
+            // </div>`;
+                // // 创建图片结构
+                var oDiv = document.createElement('div');
+                oDiv.className = 'item';
+                var img = new Image();
+                img.src = item.img;
+                /**
+                 * 等比例缩放
+                 * item.width        img.width = oLi.offsetWidth - 左右margin - 左右padding
+                 * ----------    =   ---------
+                 * item. height      img.height
+                 * */
+                // 预留图片高度
+                img.height = imgWidth * item.height / item.width;
+                oDiv.appendChild(img);
+                var oP = document.createElement('p');
+                oP.innerText = item.desc;
+                oDiv.appendChild(oP);
+                oLi[index].appendChild(oDiv);
+            });
+         }
+
+        //  获取最短列
+        function getMinLi() {
+            var oLi = document.getElementsByClassName('col');
+            var minIndex = 0;
+            var minHeight = oLi[0].offsetHeight;
+            for (var i = 0; i < oLi.length; i++) {
+                if (oLi[i].offsetHeight < minHeight) {
+                    minHeight = oLi[i].offsetHeight;
+                    minIndex = i;
+                }
+            }
+            return {
+                minHeight,
+                minIndex
+            }
+        }
+
+        var timer = null;
+        window.onscroll = function () {
+            // 可视区的高度 + 滚动条滚动的距离 > 最短列的高度
+            console.log(document.documentElement.clientHeight, document.documentElement.scrollTop)
+            var clientHeight = window.innerHeight;
+            var scrollHeight = window.pageYOffset;
+            var minHeight = getMinLi().minHeight;
+            if (clientHeight + scrollHeight > minHeight) {
+                clearTimeout(timer);
+                timer = setTimeout(function () { //防抖
+                    getData();
+                }, 500);
+            }
+        }
+        getData();
+     </script>
+</body>
+</html>
